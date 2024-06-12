@@ -58,7 +58,7 @@ The following parameters are available for each Build Order, and can be edited b
 | Source Location | Stock location to source stock items from (blank = all locations) |
 | Destination Location | Stock location where the build outputs will be located |
 | Target Date | Target date for build completion |
-| Responsible | User (or group of users) who is resonsible for the build |
+| Responsible | User (or group of users) who is responsible for the build |
 | External Link | Link to external webpage |
 | Notes | Build notes, supports markdown |
 
@@ -78,6 +78,18 @@ Each *Build Order* has an associated *Status* flag, which indicates the state of
 | `Production` | One or more build outputs have been created for this build |
 | `Cancelled` | Build has been cancelled |
 | `Completed` | Build has been completed |
+
+**Source Code**
+
+Refer to the source code for the Build Order status codes:
+
+::: build.status_codes.BuildStatus
+    options:
+        show_bases: False
+        show_root_heading: False
+        show_root_toc_entry: False
+        show_source: True
+        members: []
 
 ### Stock Allocations
 

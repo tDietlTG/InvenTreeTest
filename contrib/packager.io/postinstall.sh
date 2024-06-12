@@ -23,7 +23,7 @@ export DATA_DIR=${APP_HOME}/data
 export SETUP_NGINX_FILE=${SETUP_NGINX_FILE:-/etc/nginx/sites-enabled/inventree.conf}
 export SETUP_ADMIN_PASSWORD_FILE=${CONF_DIR}/admin_password.txt
 export SETUP_NO_CALLS=${SETUP_NO_CALLS:-false}
-export SETUP_PYTHON=${SETUP_PYTHON:-python3}
+export SETUP_PYTHON=${SETUP_PYTHON:-python3.9}
 # SETUP_DEBUG can be set to get debug info
 # SETUP_EXTRA_PIP can be set to install extra pip packages
 # SETUP_PYTHON can be set to use a different python version
@@ -33,6 +33,7 @@ detect_envs
 detect_docker
 detect_initcmd
 detect_ip
+detect_python
 
 # create processes
 create_initscripts
@@ -45,6 +46,7 @@ update_or_install
 if [ "${SETUP_CONF_LOADED}" = "true" ]; then
   set_env
 fi
+set_site
 start_inventree
 
 # show info

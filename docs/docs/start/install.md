@@ -23,7 +23,7 @@ Install required system packages (as superuser):
     The following packages are required on a debian system. A different distribution may require a slightly different set of packages
 
 !!! info "Python Version"
-    InvenTree requires a modern Python version check [here](https://github.com/inventree/InvenTree/blob/master/CONTRIBUTING.md#target-version) for the current minimums.
+    InvenTree requires a modern Python version [check here]({{ sourcefile("CONTRIBUTING.md") }}) for the current minimums.
 
 ```
 sudo apt-get update
@@ -35,7 +35,7 @@ sudo apt-get install \
 ```
 
 !!! warning "Weasyprint"
-    On some systems, the dependencies for the `weasyprint` package might not be installed. Consider running through the [weasyprint installation steps](https://weasyprint.readthedocs.io/en/stable/install.html) before moving forward.
+    On some systems, the dependencies for the `weasyprint` package might not be installed. Consider running through the [weasyprint installation steps](https://doc.courtbouillon.org/weasyprint/stable/first_steps.html) before moving forward.
 
 
 ### Create InvenTree User
@@ -107,7 +107,7 @@ source ./env/bin/activate
 The Python packages required by the InvenTree server must be installed into the virtual environment.
 
 ```
-pip install -U -r src/requirements.txt
+pip install --require-hashes -U -r src/backend/requirements.txt
 ```
 
 This installs all required Python packages using pip package manager. It also creates a (default) database configuration file which needs to be edited to meet user needs before proceeding (see next step below).
@@ -159,7 +159,7 @@ grant all privileges on database inventree to myuser;
 The PostgreSQL python binding must also be installed (into your virtual environment):
 
 ```
-pip3 install psycopg2 pgcli
+pip3 install psycopg pgcli
 ```
 
 ### MySQL / MariaDB

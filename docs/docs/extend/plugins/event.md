@@ -15,28 +15,34 @@ When a certain (server-side) event occurs, the background worker passes the even
 {% include 'img.html' %}
 {% endwith %}
 
-### Example
+### Sample Plugin - All events
 
-Implementing classes must provide a `process_event` function:
+Implementing classes must at least provide a `process_event` function:
 
-```python
-class EventPlugin(EventMixin, InvenTreePlugin):
-    """
-    A simple example plugin which responds to events on the InvenTree server.
+::: plugin.samples.event.event_sample.EventPluginSample
+    options:
+        show_bases: False
+        show_root_heading: False
+        show_root_toc_entry: False
+        show_source: True
+        members: []
 
-    This example simply prints out the event information.
-    A more complex plugin could respond to specific events however it wanted.
-    """
+### Sample Plugin - Specific Events
 
-    NAME = "EventPlugin"
-    SLUG = "event"
-    TITLE = "Triggered Events"
+If you want to process just some specific events, you can also implement the `wants_process_event` function to decide if you want to process this event or not. This function will be executed synchronously, so be aware that it should contain simple logic.
 
-    def process_event(self, event, *args, **kwargs):
-        print(f"Processing triggered event: '{event}'")
-```
+Overall this function can reduce the workload on the background workers significantly since less events are queued to be processed.
 
-### Events
+::: plugin.samples.event.filtered_event_sample.FilteredEventPluginSample
+    options:
+        show_bases: False
+        show_root_heading: False
+        show_root_toc_entry: False
+        show_source: True
+        members: []
+
+
+## Events
 
 Events are passed through using a string identifier, e.g. `build.completed`
 

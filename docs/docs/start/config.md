@@ -1,27 +1,12 @@
 ---
-title: Database Configuration
+title: InvenTree Configuration
 ---
 
-## Database Configuration
+## InvenTree Configuration
 
 While many InvenTree options can be configured at "run time", there are a number of system configuration parameters which need to be set *before* running InvenTree. Admin users will need to adjust the InvenTree installation to meet the particular needs of their setup. For example, pointing to the correct database backend, or specifying a list of allowed hosts.
 
 InvenTree system settings can be specified either via environment variables, or in a configuration file.
-
-!!! info "Environment Variables"
-    Settings specified using environment variables take priority. Values provided in the configuration file are ignored if a matching environment variable is present.
-
-### Environment Variables
-
-In addition to specifying InvenTree options via the `config.yaml` file, these options can also be specified via environment variables. This can be usful for system administrators who want the flexibility of altering settings without editing the configuration file.
-
-Environment variable settings generally use the `INVENTREE_` prefix, and are all uppercase.
-
-!!! info "Configuration Priority"
-    Configuration options set via environment variables will take priority over the values set in the `config.yaml` file.
-
-!!! warning "Available Variables"
-    Some configuration options cannot be set via environment variables. Refer to the documentation below.
 
 ### Configuration File
 
@@ -37,13 +22,29 @@ The InvenTree server tries to locate the `config.yaml` configuration file on sta
 !!! tip "Config File Location"
     When the InvenTree server boots, it will report the location where it expects to find the configuration file
 
-The configuration file *template* can be found on [GitHub](https://github.com/inventree/InvenTree/blob/master/InvenTree/config_template.yaml)
+#### Configuration File Template
+
+The configuration file *template* can be found on [GitHub]({{ sourcefile("src/backend/InvenTree/config_template.yaml") }}), and is shown below:
+
+{{ includefile("src/backend/InvenTree/config_template.yaml", "Configuration File Template", format="yaml") }}
 
 !!! info "Template File"
     The default configuration file (as defined by the template linked above) will be copied to the specified configuration file location on first run, if a configuration file is not found in that location.
 
 !!! tip "Restart Server"
-    The contents of the configuration file are read when the InevnTree server first launches. If any changes are made to the configuration file, ensure that the server is restarted, so that the changes can be made operational.
+    The contents of the configuration file are read when the InvenTree server first launches. If any changes are made to the configuration file, ensure that the server is restarted, so that the changes can be made operational.
+
+### Environment Variables
+
+In addition to specifying InvenTree options via the `config.yaml` file, these options can also be specified via environment variables. This can be useful for system administrators who want the flexibility of altering settings without editing the configuration file.
+
+Environment variable settings generally use the `INVENTREE_` prefix, and are all uppercase.
+
+!!! info "Configuration Priority"
+    Configuration options set via environment variables will take priority over the values set in the `config.yaml` file. This can be useful for overriding specific settings without needing to edit the configuration file.
+
+!!! warning "Available Variables"
+    Some configuration options cannot be set via environment variables. Refer to the documentation below.
 
 ## Basic Options
 
@@ -51,20 +52,78 @@ The following basic options are available:
 
 | Environment Variable | Configuration File | Description | Default |
 | --- | --- | --- | --- |
+| INVENTREE_SITE_URL | site_url | Specify a fixed site URL | *Not specified* |
 | INVENTREE_DEBUG | debug | Enable [debug mode](./intro.md#debug-mode) | True |
 | INVENTREE_LOG_LEVEL | log_level | Set level of logging to terminal | WARNING |
+| INVENTREE_DB_LOGGING | db_logging | Enable logging of database messages | False |
 | INVENTREE_TIMEZONE | timezone | Server timezone | UTC |
-| ADMIN_URL | admin_url | URL for accessing [admin interface](../settings/admin.md) | admin |
+| INVENTREE_ADMIN_ENABLED | admin_enabled | Enable the [django administrator interface]({% include "django.html" %}/ref/contrib/admin/) | True |
+| INVENTREE_ADMIN_URL | admin_url | URL for accessing [admin interface](../settings/admin.md) | admin |
 | INVENTREE_LANGUAGE | language | Default language | en-us |
-| INVENTREE_BASE_URL | base_url | Server base URL | *Not specified* |
+| INVENTREE_AUTO_UPDATE | auto_update | Database migrations will be run automatically | False |
 
-### Base URL Configuration
+### Site URL
 
-The base URL of the InvenTree site is required for constructing absolute URLs in a number of circumstances. To construct a URL, the InvenTree iterates through the following options in decreasing order of importance:
+The *INVENTREE_SITE_URL* option defines the base URL for the InvenTree server. This is a critical setting, and it is required for correct operation of the server. If not specified, the server will attempt to determine the site URL automatically - but this may not always be correct!
 
-1. Static configuration (i.e. set using environment variable or configuration file as above)
-2. Global settings (i.e. configured at run-time in the [global settings](../settings/global.md))
-3. Using the hostname supplied by the user request
+### Timezone
+
+By default, the InvenTree server is configured to use the UTC timezone. This can be adjusted to your desired local timezone. You can refer to [Wikipedia](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) for a list of available timezones. Use the values specified in the *TZ Identifier* column in the linked page.
+
+Date and time values are stored in the database in UTC format, and are converted to the selected timezone for display in the user interface or API.
+
+### Auto Update
+
+By default, the InvenTree server will not automatically apply database migrations. When the InvenTree installation is updated (*or a plugin is installed which requires database migrations*), database migrations must be applied manually by the system administrator.
+
+With "auto update" enabled, the InvenTree server will automatically apply database migrations as required. To enable automatic database updates, set `INVENTREE_AUTO_UPDATE` to `True`.
+
+## Server Access
+
+Depending on how your InvenTree installation is configured, you will need to pay careful attention to the following settings. If you are running your server behind a proxy, or want to adjust support for [CORS requests](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS), one or more of the following settings may need to be adjusted.
+
+!!! warning "Advanced Users"
+    The following settings require a certain assumed level of knowledge. You should also refer to the [django documentation]({% include "django.html" %}/ref/settings/) for more information.
+
+!!! danger "Not Secure"
+    Allowing access from any host is not secure, and should be adjusted for your installation.
+
+!!! info "Environment Variables"
+    Note that a provided environment variable will override the value provided in the configuration file.
+
+!!! success "INVENTREE_SITE_URL"
+    If you have specified the `INVENTREE_SITE_URL`, this will automatically be used as a trusted CSRF and CORS host (see below).
+
+| Environment Variable | Configuration File | Description | Default |
+| --- | --- | --- | --- |
+| INVENTREE_ALLOWED_HOSTS | allowed_hosts | List of allowed hosts | `*` |
+| INVENTREE_TRUSTED_ORIGINS | trusted_origins | List of trusted origins. Refer to the [django documentation]({% include "django.html" %}/ref/settings/#csrf-trusted-origins) | Uses the *INVENTREE_SITE_URL* parameter, if set. Otherwise, an empty list. |
+| INVENTREE_CORS_ORIGIN_ALLOW_ALL | cors.allow_all | Allow all remote URLS for CORS checks | `False` |
+| INVENTREE_CORS_ORIGIN_WHITELIST | cors.whitelist | List of whitelisted CORS URLs. Refer to the [django-cors-headers documentation](https://github.com/adamchainz/django-cors-headers#cors_allowed_origins-sequencestr) | Uses the *INVENTREE_SITE_URL* parameter, if set. Otherwise, an empty list. |
+| INVENTREE_CORS_ORIGIN_REGEX | cors.regex | List of regular expressions for CORS whitelisted URL patterns | *Empty list* |
+| INVENTREE_CORS_ALLOW_CREDENTIALS | cors.allow_credentials | Allow cookies in cross-site requests | `True` |
+| INVENTREE_USE_X_FORWARDED_HOST | use_x_forwarded_host | Use forwarded host header | `False` |
+| INVENTREE_USE_X_FORWARDED_PORT | use_x_forwarded_port | Use forwarded port header | `False` |
+| INVENTREE_SESSION_COOKIE_SECURE | cookie.secure | Enforce secure session cookies | `False` |
+| INVENTREE_COOKIE_SAMESITE | cookie.samesite | Session cookie mode. Must be one of `Strict | Lax | None`. Refer to the [mozilla developer docs](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie) for more information. | `None` |
+
+### Proxy Settings
+
+If you are running InvenTree behind another proxy, you will need to ensure that the InvenTree server is configured to listen on the correct host and port. You will likely have to adjust the `INVENTREE_ALLOWED_HOSTS` setting to ensure that the server will accept requests from the proxy.
+
+## Admin Site
+
+Django provides a powerful [administrator interface]({% include "django.html" %}/ref/contrib/admin/) which can be used to manage the InvenTree database. This interface is enabled by default, and available at the `/admin/` URL.
+
+The following admin site configuration options are available:
+
+| Environment Variable | Configuration File | Description | Default |
+| --- | --- | --- | --- |
+| INVENTREE_ADMIN_ENABLED | admin_enabled | Enable the django administrator interface | True |
+| INVENTREE_ADMIN_URL | admin_url | URL for accessing the admin interface | admin |
+
+!!! warning "Security"
+    Changing the admin URL is a simple way to improve security, but it is not a substitute for proper security practices.
 
 ## Administrator Account
 
@@ -74,7 +133,10 @@ An administrator account can be specified using the following environment variab
 | --- | --- | --- | --- |
 | INVENTREE_ADMIN_USER | admin_user | Admin account username | *Not specified* |
 | INVENTREE_ADMIN_PASSWORD | admin_password | Admin account password | *Not specified* |
+| INVENTREE_ADMIN_PASSWORD_FILE | admin_password_file | Admin account password file | *Not specified* |
 | INVENTREE_ADMIN_EMAIL | admin_email |Admin account email address | *Not specified* |
+
+You can either specify the password directly using `INVENTREE_ADMIN_PASSWORD`, or you can specify a file containing the password using `INVENTREE_ADMIN_PASSWORD_FILE` (this is useful for nix users).
 
 !!! info "Administrator Account"
     Providing `INVENTREE_ADMIN` credentials will result in the provided account being created with *superuser* permissions when InvenTree is started.
@@ -140,6 +202,35 @@ If running with a MySQL database backend, the following additional options are a
 | --- | --- | --- | --- |
 | INVENTREE_DB_ISOLATION_SERIALIZABLE | database.serializable | Database isolation level configured to "serializable" | False |
 
+## Caching
+
+InvenTree can be configured to use [redis](https://redis.io) as a global cache backend.
+Enabling a global cache can provide significant performance improvements for InvenTree.
+
+### Cache Server
+
+Enabling global caching requires connection to a redis server (which is separate from the InvenTree database and web server). Setup and configuration of this server is outside the scope of this documentation. It is assumed that if you are configuring a cache server, you have already set one up, and are comfortable configuring it.
+
+!!! tip "Docker Support"
+    If you are running [InvenTree under docker](./docker.md), we provide a redis container as part of our docker compose file - so redis caching works out of the box.
+
+### Cache Settings
+
+The following cache settings are available:
+
+| Environment Variable | Configuration File | Description | Default |
+| --- | --- | --- | --- |
+| INVENTREE_CACHE_ENABLED | cache.enabled | Enable redis caching | False |
+| INVENTREE_CACHE_HOST | cache.host | Cache server host | *Not specified* |
+| INVENTREE_CACHE_PORT | cache.port | Cache server port | 6379 |
+| INVENTREE_CACHE_CONNECT_TIMEOUT | cache.connect_timeout | Cache connection timeout (seconds) | 3 |
+| INVENTREE_CACHE_TIMEOUT | cache.timeout | Cache timeout (seconds) | 3 |
+| INVENTREE_CACHE_TCP_KEEPALIVE | cache.tcp_keepalive | Cache TCP keepalive | True |
+| INVENTREE_CACHE_KEEPALIVE_COUNT | cache.keepalive_count | Cache keepalive count | 5 |
+| INVENTREE_CACHE_KEEPALIVE_IDLE | cache.keepalive_idle | Cache keepalive idle | 1 |
+| INVENTREE_CACHE_KEEPALIVE_INTERVAL | cache.keepalive_interval | Cache keepalive interval | 1 |
+| INVENTREE_CACHE_USER_TIMEOUT | cache.user_timeout | Cache user timeout | 1000 |
+
 ## Email Settings
 
 To enable [email functionality](../settings/email.md), email settings must be configured here, either via environment variables or within the configuration file.
@@ -155,35 +246,15 @@ The following email settings are available:
 | INVENTREE_EMAIL_PASSWORD | email.password | Email account password | *Not specified* |
 | INVENTREE_EMAIL_TLS | email.tls | Enable TLS support | False |
 | INVENTREE_EMAIL_SSL | email.ssl | Enable SSL support | False |
-| INVENTREE_EMAIL_SENDER | email.sender | Name of sender | *Not specified* |
+| INVENTREE_EMAIL_SENDER | email.sender | Sending email address | *Not specified* |
 | INVENTREE_EMAIL_PREFIX | email.prefix | Prefix for subject text | [InvenTree] |
 
-## Supported Currencies
+### Sender Email
 
-The currencies supported by InvenTree must be specified in the [configuration file](#configuration-file).
+The "sender" email address is the address from which InvenTree emails are sent (by default) and must be specified for outgoing emails to function:
 
-A list of currency codes (e.g. *AUD*, *CAD*, *JPY*, *USD*) can be specified using the `currencies` variable.
-
-## Allowed Hosts / CORS
-
-By default, all hosts are allowed, and CORS requests are enabled from any origin.
-
-!!! danger "Not Secure"
-    Allowing access from any host is not secure, and should be adjusted for your installation.
-
-| Environment Variable | Configuration File | Description | Default |
-| --- | --- | --- | --- |
-| INVENTREE_ALLOWED_HOSTS | allowed_hosts | List of allowed hosts | `*` |
-| INVENTREE_CORS_ORIGIN_ALLOW_ALL | cors.allow_all | Allow all remote URLS for CORS checks | False |
-| INVENTREE_CORS_ORIGIN_WHITELIST | cors.whitelist | List of whitelisted CORS URLs | *Empty list* |
-
-!!! info "Configuration File"
-    Allowed hosts and CORS options must be changed in the configuration file, and cannot be set via environment variables
-
-For further information, refer to the following documentation:
-
-* [Django ALLOWED_HOSTS](https://docs.djangoproject.com/en/2.2/ref/settings/#allowed-hosts)
-* [Django CORS headers](https://github.com/OttoYiu/django-cors-headers)
+!!! info "Fallback"
+    If `INVENTREE_EMAIL_SENDER` is not provided, the system will fall back to `INVENTREE_EMAIL_USERNAME` (if the username is a valid email address)
 
 ## File Storage Locations
 
@@ -193,6 +264,7 @@ InvenTree requires some external directories for storing files:
 | --- | --- | --- | --- |
 | INVENTREE_STATIC_ROOT | static_root | [Static files](./serving_files.md#static-files) directory | *Not specified* |
 | INVENTREE_MEDIA_ROOT | media_root | [Media files](./serving_files.md#media-files) directory | *Not specified* |
+| INVENTREE_BACKUP_DIR | backup_dir | Backup files directory | *Not specified* |
 
 !!! tip "Serving Files"
     Read the [Serving Files](./serving_files.md) section for more information on hosting *static* and *media* files
@@ -227,12 +299,9 @@ InvenTree provides allowance for additional sign-in options. The following optio
 
 ### Single Sign On
 
-SSO backends for all required authentication providers need to be added to the config file as a list under the key `social_backends`. The correct backend-name can be found in django-allauths [configuration documentation](https://django-allauth.readthedocs.io/en/latest/installation.html#django).
+Single Sign On (SSO) allows users to sign in to InvenTree using a third-party authentication provider. This functionality is provided by the [django-allauth](https://docs.allauth.org/en/latest/) package.
 
-If the selected providers need additional settings they must be added as dicts under the key `social_providers`. The correct settings can be found in the django-allauths [provider documentation](https://django-allauth.readthedocs.io/en/latest/providers.html).
-
-!!! warning "You are not done"
-    SSO still needs credentials for all providers and has to be enabled in the [global settings](../settings/global.md)!
+There are multiple configuration parameters which must be specified (either in your configuration file, or via environment variables) to enable SSO functionality. Refer to the [SSO documentation](../settings/SSO.md) for a guide on SSO configuration.
 
 !!! tip "More Info"
     Refer to the [SSO documentation](../settings/SSO.md) for more information.
@@ -243,8 +312,12 @@ The login-experience can be altered with the following settings:
 
 | Environment Variable | Configuration File | Description | Default |
 | --- | --- | --- | --- |
-| INVENTREE_LOGIN_CONFIRM_DAYS | login.confirm_days | Duration for which confirmation links are valid | 3 |
-| INVENTREE_LOGIN_ATTEMPTS | login.attempts | Count of allowed login attempts before blocking user | 5 |
+| INVENTREE_LOGIN_CONFIRM_DAYS | login_confirm_days | Duration for which confirmation links are valid | 3 |
+| INVENTREE_LOGIN_ATTEMPTS | login_attempts | Count of allowed login attempts before blocking user | 5 |
+| INVENTREE_LOGIN_DEFAULT_HTTP_PROTOCOL | login_default_protocol | Default protocol to use for login callbacks (e.g. using [SSO](#single-sign-on)) | Uses the protocol specified in `INVENTREE_SITE_URL`, or defaults to *http* |
+
+!!! tip "Default Protocol"
+    If you have specified `INVENTREE_SITE_URL`, the default protocol will be used from that setting. Otherwise, the default protocol will be *http*.
 
 ### Authentication Backends
 
@@ -263,7 +336,7 @@ The InvenTree server can be integrated with the [sentry.io](https://sentry.io) m
 !!! info "Default DSN"
     If enabled with the default DSN, server errors will be logged to a sentry.io account monitored by the InvenTree developers.
 
-### Customisation Options
+### Customization Options
 
 The logo and custom messages can be changed/set:
 
@@ -273,6 +346,7 @@ The logo and custom messages can be changed/set:
 | INVENTREE_CUSTOM_SPLASH | customize.splash | Path to custom splash screen in the static files directory | *Not specified* |
 | INVENTREE_CUSTOMIZE | customize.login_message | Custom message for login page | *Not specified* |
 | INVENTREE_CUSTOMIZE | customize.navbar_message | Custom message for navbar | *Not specified* |
+| INVENTREE_CUSTOMIZE | customize.hide_pui_banner | Disable PUI banner | False |
 
 If you want to remove the InvenTree branding as far as possible from your end-user also check the [global server settings](../settings/global.md#server-settings).
 
@@ -289,11 +363,6 @@ The following [plugin](../extend/plugins.md) configuration options are available
 | Environment Variable | Configuration File | Description | Default |
 | --- | --- | --- | --- |
 | INVENTREE_PLUGINS_ENABLED | plugins_enabled | Enable plugin support | False |
+| INVENTREE_PLUGIN_NOINSTALL | plugin_noinstall | Disable Plugin installation via API - only use plugins.txt file | False |
 | INVENTREE_PLUGIN_FILE | plugins_plugin_file | Location of plugin installation file | *Not specified* |
 | INVENTREE_PLUGIN_DIR | plugins_plugin_dir | Location of external plugin directory | *Not specified* |
-
-## Other Options
-
-### Middleware
-
-Custom middleware layers can be specified here.
